@@ -1,5 +1,5 @@
 var Sequelize = require('sequelize');
-var db = new Sequelize('postgres://localhost:5432/wikistack');
+var db = new Sequelize('postgres://localhost:5432/wikistack', {logging:false});
 
 var Page = db.define('page',{
   title: {type: Sequelize.STRING, allowNull:false},
@@ -8,23 +8,26 @@ var Page = db.define('page',{
   status: Sequelize.ENUM('open', 'closed'),
   date: {type: Sequelize.DATE, defaultValue: Sequelize.NOW}
 },{
-  hooks:{beforeValidate: function(page) {
-    if (page.title) {
-      // Removes all non-alphanumeric characters from title
-      // And make whitespace underscore
-      page.urlTitle = page.title.replace(/\s+/g, '_').replace(/\W/g, '');
-    } else {
-      // Generates random 5 letter string
-      page.urlTitle = Math.random().toString(36).substring(2, 7);
+  hooks:{
+    beforeValidate: function(page) {
+      if (page.title) {
+        // Removes non-alphanumeric characters and make whitespace underscore
+        page.urlTitle = page.title.replace(/\s+/g, '_').replace(/\W/g, '');
+      }
     }
-  }}
+  },
+  getterMethods:{
+    route: function(){
+      return "/wiki/" + this.urlTitle;
+    }
+  }
 })
 
 var User = db.define('user',{
   name: {type: Sequelize.STRING, allowNull:false},
-  email: {type: Sequelize.STRING, allowNull:false}
+  email: {type: Sequelize.STRING, allowNull:false, unique:true, validate:{isEmail:true}}
 })
 
-// module.exports= { Page: Page, User: User };
+Page.belongsTo(User,{as:'author'});
 
 module.exports= {Page:Page, User:User};

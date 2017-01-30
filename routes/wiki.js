@@ -6,37 +6,67 @@ let page = db.Page;
 let user = db.User;
 
 
+// router.get('/', function(req, res, next){
+//   console.log("user reached home page")
+//   res.render('index');
+// })
+
 router.get('/', function(req, res, next){
   console.log("user reached home page")
-  // res.send("hello");
-  // next();
-  // res.render('wikipage');
-  res.redirect('/');
+  page.findAll()
+  .then(pages=>{
+    res.render('index.html', {pages:pages});
+  })
+  .catch(next)
 })
 
 router.post('/', function(req, res, next){
-  //name, email, page title, text, status
-  console.log(req.body);
-  var tempUser = user.build({
-    name: req.body.name,
-    email: req.body.email
+  user.findOrCreate({
+    where:{
+      name: req.body.name,
+      email: req.body.email
+    }
   })
-  var tempPage = page.build({
-    title: req.body.title,
-    // urlTitle: this.hooks.beforeValidate(tempPage),
-    content: req.body.text,
-    status: req.body.status
+  .spread((user,alreadyExistBool)=>{
+    console.log(req.body);
+    return page.create({
+      title:req.body.title,
+      content:req.body.text,
+      status:req.body.status,
+      tags:req.body.tags
+    })
+    .then(createdPage=>{
+      return createdPage.setAuthor(user);
+    })
   })
-  tempUser.save();
-  tempPage.save();
-  // res.redirect('/');
-  res.json(tempPage);
+  .then(page=>{
+    res.redirect(page.route)
+  })
+  .catch(next);
 })
 
 router.get('/add', function(req,res,next){
-  res.render('addpage',{showForm:true});
+  res.render('addpage',{showForm:true})
 })
 
 router.get('/:urlTitle', function (req, res, next) {
-  res.send('hit dynamic route at ' + req.params.urlTitle);
+  var urlTitle = req.params.urlTitle;
+  page.findOne({
+    where: {
+      urlTitle: urlTitle
+    }
+  })
+  .then((pg)=>{
+    if([pg] === null){
+      return next(new Error('That page was not found!'))
+    }
+    return pg.getAuthor()
+      .then(author=>{
+        pg.author = author;
+        res.render('wikipage', {
+          page:pg
+        })
+      })
+  })
+  .catch(next)
 });

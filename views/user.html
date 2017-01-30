@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <h3>{{user.name}}</h3>
+  <div>PLACEHOLDER TAG LIST</div>
+  <hr/>
+  <div class="page-body">
+    <ul class="list-unstyled">
+      <!-- PLACEHOLDER LIST OF PAGES -->
+      {% for page in user.pages %}
+        <li>
+          <a href="{{page.route}}">{{page.title}}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <hr/>
+  <a href="PLACEHOLDER_URL_TITLE/edit" class="btn btn-primary">edit this profile</a>
+  <a href="PLACEHOLDER_URL_TITLE/delete" class="btn btn-danger">delete this profile</a>
+{% endblock %}
